@@ -20,9 +20,13 @@ function! opam#eval_env()
 endfunction
 
 function! opam#switch(ocaml_version)
-  call system("opam switch " . s:shellesc(a:ocaml_version))
-  call opam#eval_env()
-  let g:opam_current_compiler = opam#compiler_version()
+  let res = system('opam switch --color=never ' . s:shellesc(a:ocaml_version))
+  let success = empty(matchstr(res, 'ERROR'))
+  if success
+    call opam#eval_env()
+    let g:opam_current_compiler = opam#compiler_version()
+  endif
+  return success
 endfunction
 
 function! opam#chomp(s)
@@ -53,8 +57,12 @@ function! s:Opam(bang,...) abort
     let l:version = a:1
   end
   if switch
-    call opam#switch(l:version)
-    return 'echomsg "Using ' . g:opam_current_compiler . '"'
+    let success = opam#switch(l:version)
+    if success
+      return 'echomsg "Using ' . g:opam_current_compiler . '"'
+    else
+      return 'echoerr "Switching to ' . l:version . ' failed"'
+    endif
   else
     return 'echoerr "Only switching is supported for now"'
   else
@@ -63,6 +71,7 @@ endfunction
 function! s:Complete(A,L,P)
   let installed = split((system("opam switch -s -i")), " ")
   call map(installed, 'opam#chomp(v:val)')
+  echo "Returning " . join(installed, ",")
   return join(installed, "\n")
 endfunction
 

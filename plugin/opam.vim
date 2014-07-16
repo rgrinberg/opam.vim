@@ -69,9 +69,8 @@ function! s:Opam(bang,...) abort
 endfunction
 
 function! s:Complete(A,L,P)
-  let installed = split((system("opam switch -s -i")), " ")
+  let installed = split((system("opam switch -s -i 2> /dev/null")), " ")
   call map(installed, 'opam#chomp(v:val)')
-  echo "Returning " . join(installed, ",")
   return join(installed, "\n")
 endfunction
 
